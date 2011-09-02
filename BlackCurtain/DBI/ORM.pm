@@ -17,7 +17,7 @@ sub loadscheme()
 		(my $sth = $j->{dbh}->prepare("SHOW COLUMNS FROM `".$scheme."`"))->execute();
 		for(my $i = 0;my $record = $sth->fetch();++$i){
 			${"BlackCurtain::DBI::Scheme::".$scheme."::STRUCTURE"}->{undef} = $scheme;
-			${"BlackCurtain::DBI::Scheme::".$scheme."::STRUCTURE"}->{$i} = [$i,@{$record}];
+			${"BlackCurtain::DBI::Scheme::".$scheme."::STRUCTURE"}->{$i} = [$i,undef,undef,undef,@{$record}];
 			${"BlackCurtain::DBI::Scheme::".$scheme."::STRUCTURE"}->{$record->[0]} = ${"BlackCurtain::DBI::Scheme::".$scheme."::STRUCTURE"}->{$i};
 			if($record->[3] eq "PRI"){
 				${"BlackCurtain::DBI::Scheme::".$scheme."::STRUCTURE"}->{"PRIMARY"} = ${"BlackCurtain::DBI::Scheme::".$scheme."::STRUCTURE"}->{$i};
@@ -48,7 +48,7 @@ AUTOLOAD
 			my $v = shift();
 
 			if(defined($k) && defined(${ref($j)."::STRUCTURE"}->{"PRIMARY"}) && $k ne $j->{cache}->[${ref($j)."::STRUCTURE"}->{"PRIMARY"}->[0]]){
-				$j->pop(${ref($j)."::STRUCTURE"}->{"PRIMARY"}->[1] =>$k);
+				$j->pop(${ref($j)."::STRUCTURE"}->{"PRIMARY"}->[4] =>$k);
 			}
 			return($j->{cache}->[$i]);
 		};
@@ -74,14 +74,24 @@ sub pop()
 {
 	my $j = shift();
 	my %a = @_;
-	my $s = "sth:".join(",",keys(%a));
 
-	if(!defined($j->{$s})){
-		$j->{$s} = $j->{dbh}->prepare("SELECT * FROM `".${ref($j)."::STRUCTURE"}->{undef}."` WHERE ".join(" AND ",map{ "`".$_."` = ?" }keys(%a))." LIMIT 0,1");
-	}
-	$j->{$s}->execute(values(%a));
-	$j->{cache} = $j->{$s}->fetch();
+	(my $sth = $j->prepare([keys(%a)],1))->execute(values(%a));
+	$j->{cache} = $sth->fetch();
 	return();
+}
+
+sub prepare()
+{
+	my $j = shift();
+	my $a = shift();
+	my $c = int(shift());
+	my $i = int(shift());
+	my $label = "".join(",",@{$a});
+
+	if(!defined($j->{$label})){
+		$j->{$label} = $j->{dbh}->prepare(sprintf("SELECT * FROM `%s` WHERE %s%s",${ref($j)."::STRUCTURE"}->{undef},join(" AND ",map{ sprintf(defined(${ref($j)."::STRUCTURE"}->{$_}->[1]) ? "`%s` = %s(?)" : "%s = ?",$_,${ref($j)."::STRUCTURE"}->{$_}->[1]) }@{$a}),($c > 0 ? sprintf(" LIMIT %d,%d",$i,$c) : undef)));
+	}
+	return($j->{$label});
 }
 
 1;
