@@ -14,8 +14,8 @@ sub loadscheme()
 	}
 
 	if(my $j = ("BlackCurtain::DBI::Scheme::".$scheme)->new(%a)){
-		(my $sth = $j->{dbh}->prepare("SHOW COLUMNS FROM `".$scheme."`"))->execute();
-		for(my $i = 0;my $record = $sth->fetch();++$i){
+		(my $cur = $j->{dbh}->prepare("SHOW COLUMNS FROM `".$scheme."`"))->execute();
+		for(my $i = 0;my $record = $cur->fetch();++$i){
 			${"BlackCurtain::DBI::Scheme::".$scheme."::STRUCTURE"}->{undef} = $scheme;
 			${"BlackCurtain::DBI::Scheme::".$scheme."::STRUCTURE"}->{$i} = [$i,undef,undef,undef,@{$record}];
 			${"BlackCurtain::DBI::Scheme::".$scheme."::STRUCTURE"}->{$record->[0]} = ${"BlackCurtain::DBI::Scheme::".$scheme."::STRUCTURE"}->{$i};
@@ -32,6 +32,7 @@ sub loadscheme()
 
 package BlackCurtain::DBI::ORM::Scheme;
 use Carp;
+use attributes;
 use vars qw($AUTOLOAD);
 use DBI;
 
@@ -42,7 +43,7 @@ AUTOLOAD
 
 	(my $func = $AUTOLOAD) =~s/^.+:://igo;
 	if(defined(my $i = ${ref($j)."::STRUCTURE"}->{$func}->[0])){
-		*{$AUTOLOAD} = sub(){
+		*{$AUTOLOAD} = sub():lvalue{
 			my $j = shift();
 			my $k = shift();
 			my $v = shift();
@@ -75,9 +76,10 @@ sub pop()
 	my $j = shift();
 	my %a = @_;
 
-	(my $sth = $j->prepare({map{ $_ =>"=" }keys(%a)},1))->execute(values(%a));
-	$j->{cache} = $sth->fetch();
-	return();
+	(my $cur = $j->prepare({map{ $_ =>"=" }keys(%a)},1))->execute(values(%a));
+	$j->{cache} = $cur->fetch();
+
+	return($cur->rows());
 }
 
 sub prepare()
