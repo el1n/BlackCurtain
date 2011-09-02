@@ -75,7 +75,7 @@ sub pop()
 	my $j = shift();
 	my %a = @_;
 
-	(my $sth = $j->prepare([keys(%a)],1))->execute(values(%a));
+	(my $sth = $j->prepare({map{ $_ =>"=" }keys(%a)},1))->execute(values(%a));
 	$j->{cache} = $sth->fetch();
 	return();
 }
@@ -86,12 +86,28 @@ sub prepare()
 	my $a = shift();
 	my $c = int(shift());
 	my $i = int(shift());
-	my $label = "".join(",",@{$a});
+	my $label = "".join(",",keys(%{$a}));
 
 	if(!defined($j->{$label})){
-		$j->{$label} = $j->{dbh}->prepare(sprintf("SELECT * FROM `%s` WHERE %s%s",${ref($j)."::STRUCTURE"}->{undef},join(" AND ",map{ sprintf(defined(${ref($j)."::STRUCTURE"}->{$_}->[1]) ? "`%s` = %s(?)" : "%s = ?",$_,${ref($j)."::STRUCTURE"}->{$_}->[1]) }@{$a}),($c > 0 ? sprintf(" LIMIT %d,%d",$i,$c) : undef)));
+		$j->{$label} = $j->{dbh}->prepare(sprintf("SELECT * FROM `%s` WHERE %s%s",${ref($j)."::STRUCTURE"}->{undef},join(" AND ",map{ sprintf(defined(${ref($j)."::STRUCTURE"}->{$_}->[1]) ? "`%s` = %s(?)" : "%s = ?",$_,${ref($j)."::STRUCTURE"}->{$_}->[1]) }keys(%{$a})),($c > 0 ? sprintf(" LIMIT %d,%d",$i,$c) : undef)));
 	}
 	return($j->{$label});
+}
+
+sub promise()
+{
+	my $j = shift();
+	my $func = shift();
+	my @a = @_;
+
+	*{ref($j)."::".$func} = sub(){
+		my $j = shift();
+
+		my $r = $j->pop(map{ $_ =>shift() }@a);
+
+		return(defined(${ref($j)."::STRUCTURE"}->{"PRIMARY"}) ? $j->{cache}->[${ref($j)."::STRUCTURE"}->{"PRIMARY"}->[0]] : $r);
+	};
+	return();
 }
 
 1;
