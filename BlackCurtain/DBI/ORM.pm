@@ -32,7 +32,6 @@ sub loadscheme()
 
 package BlackCurtain::DBI::ORM::Scheme;
 use Carp;
-use attributes;
 use vars qw($AUTOLOAD);
 use DBI;
 
@@ -51,7 +50,8 @@ AUTOLOAD
 			if(defined($k) && defined(${ref($j)."::STRUCTURE"}->{"PRIMARY"}) && $k ne $j->{cache}->[${ref($j)."::STRUCTURE"}->{"PRIMARY"}->[0]]){
 				$j->pop(${ref($j)."::STRUCTURE"}->{"PRIMARY"}->[4] =>$k);
 			}
-			return($j->{cache}->[$i]);
+			#return($j->{cache}->[$i]);
+			$j->{cache}->[$i];
 		};
 		return($j->$func(@a));
 	}else{
