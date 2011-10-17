@@ -26,7 +26,7 @@ sub clean
 {
 	my $j = shift();
 
-	$j = LWP::UserAgent->new(
+	$j->{a} = LWP::UserAgent->new(
 		#agent =>
 		#from =>
 		#conn_cache =>
@@ -56,9 +56,14 @@ sub http
 	my $q = shift();
 	my $a = shift();
 
-	my $s = $j->request(blessed($q) ? $q : HTTP::Request->new(ref($q) eq "HASH" ? %{$q} : (GET =>$q)));
-	if($s->is_success()){
+	if(($j->{s} = $j->{a}->request(blessed($q) ? $q : HTTP::Request->new(ref($q) eq "HASH" ? %{$q} : (GET =>$q))))->is_success()){
+		#my $h = $j->{s}->{_headers}->as_string();
+		my $b = $j->{s}->decoded_content();
+		my $f = [map{HTML::Form->parse($_,$j->{s}->{_request}->uri())}($b =~m/(<form.*?<\/form>)/ios)];
+	
+		return($j->{s}->code(),$b,$f);
 	}else{
+		return(0);
 	}
 }
 
