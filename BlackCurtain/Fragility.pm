@@ -1,5 +1,6 @@
 package BlackCurtain::Fragility;
 use Carp;
+use base qw(Clone);
 use vars qw($AUTOLOAD);
 use Scalar::Util qw(blessed);
 use Encode;
@@ -10,6 +11,18 @@ use HTTP::Request;
 use HTTP::Response;
 use HTTP::Cookies;
 use HTML::Form;
+
+AUTOLOAD
+{
+	my $j = shift();
+	my @a = @_;
+
+	if(eval(qq(require $AUTOLOAD))){
+		return($AUTOLOAD->new(@a));
+	}else{
+		Carp::croak($@);
+	}
+}
 
 sub new
 {
@@ -57,9 +70,9 @@ sub http
 	my $a = shift();
 
 	if(($j->{s} = $j->{a}->request(blessed($q) ? $q : HTTP::Request->new(ref($q) eq "HASH" ? %{$q} : (GET =>$q))))->is_success()){
-		#my $h = $j->{s}->{_headers}->as_string();
-		my $b = $j->{s}->decoded_content();
-		my $f = [map{HTML::Form->parse($_,$j->{s}->{_request}->uri())}($b =~m/(<form.*?<\/form>)/ios)];
+		my $h = $j->{s}->{_headers}->as_string();
+		my $b = $j->{s}->decoded_content(default_charset =>"UTF-8");
+		my $f = [grep{(!defined($a->{form})) || ($_->{attr}->{id} =~ /$a->{form}/i || $_->{attr}->{name} =~ /$a->{form}/i)}map{HTML::Form->parse($_,$j->{s}->{_request}->uri())}($b =~m/(<form.*?<\/form>)/gios)];
 	
 		return($j->{s}->code(),$b,$f);
 	}else{
