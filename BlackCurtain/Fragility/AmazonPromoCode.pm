@@ -15,7 +15,7 @@ sub redeem
 	$j->{__PACKAGE__}->{u} = $u;
 	$j->{__PACKAGE__}->{p} = $p;
 
-	my(undef,$b,$f) = $j->http("https://www.amazon.co.jp/gp/css/account/payment/view-gc-balance.html/ref=ya__reddem",{form =>"ap_signin_form"});
+	$j->http("https://www.amazon.co.jp/gp/css/account/payment/view-gc-balance.html/ref=ya__reddem",{form =>"ap_signin_form"});
 }
 
 1;
