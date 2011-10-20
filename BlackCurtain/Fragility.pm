@@ -63,46 +63,44 @@ sub clean
 	return();
 }
 
-sub http
+sub spider
 {
 	my $j = shift();
 	my $q = shift();
-	my @a = map{ref($_) eq "ARRAY" ? @{$_} : $_}@_;
+	my @a = @_;
 
 	if(($j->{s} = $j->{a}->request(blessed($q) ? $q : HTTP::Request->new(ref($q) eq "HASH" ? %{$q} : (GET =>$q))))->is_success()){
-		my $h = $j->{s}->{_headers}->as_string();
-		my $b = $j->{s}->decoded_content(default_charset =>"UTF-8");
-		my $f = [map{HTML::Form->parse($_,$j->{s}->{_request}->uri())}($b =~m/(<form.*?<\/form>)/gios)];
+		$j->{h} = $j->{s}->{_headers}->as_string();
+		$j->{b} = $j->{s}->decoded_content(default_charset =>"UTF-8");
+		$j->{f} = [map{HTML::Form->parse($_,$j->{s}->{_request}->uri())}($j->{b} =~m/(<form.*?<\/form>)/gios)];
 
-		my @r = map{
-			if(defined($_->{regex}) || ref($_) ne "HASH"){
-				$b =~ /$_->{regex}/i;
-				defined($1) ? $1 : 1;
-			}elsif(defined($_->{word})){
-				$b =~ /\Q$_->{word}\E/ig;
-			}elsif(defined($_->{form})){
-				my $a = $_;
-				(grep{(!defined($a->{form})) || ($_->{attr}->{id} =~ /$a->{form}/i || $_->{attr}->{name} =~ /$a->{form}/i)}@{$f})[0];
-			}elsif(defined($_->{code})){
-				$_->{code} == $j->{s}->code();
-			}else{
-			}
-		}@a;
-	
-		return($j->{s}->code(),$b,$f,@r);
+		return($j->{s}->code(),$j->{b},$j->{f},$j->seek(@a));
 	}else{
 		return(0);
 	}
 }
 
-sub pop3
+sub seek
 {
 	my $j = shift();
-}
+	my @a = map{ref($_) eq "ARRAY" ? @{$_} : $_}@_;
 
-sub imap
-{
-	my $j = shift();
+	my @r = map{
+		if(defined($_->{regex}) || ref($_) ne "HASH"){
+			$j->{b} =~ /$_->{regex}/i;
+			defined($1) ? $1 : 1;
+		}elsif(defined($_->{word})){
+			$j->{b} =~ /\Q$_->{word}\E/ig;
+		}elsif(defined($_->{form})){
+			my $a = $_;
+			(grep{(!defined($a->{form})) || ($_->{attr}->{id} =~ /$a->{form}/i || $_->{attr}->{name} =~ /$a->{form}/i)}@{$j->{f}})[0];
+		}elsif(defined($_->{code})){
+			$_->{code} == $j->{s}->code();
+		}else{
+		}
+	}@a;
+
+	return(@r);
 }
 
 1;
