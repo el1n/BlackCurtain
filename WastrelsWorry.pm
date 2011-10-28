@@ -72,7 +72,7 @@ sub yield
 	}
 
 	my $f = 0.00;
-	$r{m} = &{(grep{$_->[0] > $s}map{$s = rand($_->[0] = ($f += $_->[0]));$_}grep{$_->[1] =~ /U/io}@{clone(\@m)})[0]->[2]}($r{_});
+	$r{m} = &{(grep{$_->[0] > $s}map{$s = rand($_->[0] = ($f += $_->[0]));$_}grep{$_->[1] =~ /M/io}@{clone(\@m)})[0]->[2]}($r{_});
 	if($a{m_min} > 0 && length($r{m}) < $a{m_min}){
 		$r{m} .= "_" x ($a{m_min} - length($r{m}));
 	}elsif($a{m_max} > 0 && length($r{m}) > $a{m_max}){
@@ -81,7 +81,7 @@ sub yield
 	$r{m} .= "\@".($#{$a{m_domain}} != -1 ? (@{$a{m_domain}})[int(rand($#{$a{m_domain}} + 1))] : "example.com");
 
 	my $f = 0.00;
-	$r{p} = &{(grep{$_->[0] > $s}map{$s = rand($_->[0] = ($f += $_->[0]));$_}grep{$_->[1] =~ /U/io}@{clone(\@m)})[0]->[2]}($r{_});
+	$r{p} = &{(grep{$_->[0] > $s}map{$s = rand($_->[0] = ($f += $_->[0]));$_}grep{$_->[1] =~ /P/io}@{clone(\@m)})[0]->[2]}($r{_});
 	if($a{p_min} > 0 && length($r{p}) < $a{p_min}){
 		$r{p} .= "_" x ($a{p_min} - length($r{p}));
 	}elsif($a{p_max} > 0 && length($r{p}) > $a{p_max}){
