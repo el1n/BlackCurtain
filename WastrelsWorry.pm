@@ -14,7 +14,7 @@ AUTOLOAD
 
 		return($a);
 	}else{
-		Carp::croak($@);
+		Carp::croak(sprintf("Can't locate object method \"%s\" via package \"%s\"",reverse($AUTOLOAD =~m/^(.+?)::(\w+)$/)));
 	}
 
 	print $AUTOLOAD."\n";
@@ -30,7 +30,7 @@ INIT
 	}
 }
 
-sub yeild
+sub yield
 {
 	my %a = @_;
 
