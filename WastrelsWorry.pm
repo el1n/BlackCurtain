@@ -65,27 +65,27 @@ sub yield
 	my $s;
 	my $f = 0.00;
 	$r{u} = &{(grep{$_->[0] > $s}map{$s = rand($_->[0] = ($f += $_->[0]));$_}grep{$_->[1] =~ /U/io}@{clone(\@m)})[0]->[2]}($r{_});
-	if($a{u_max} > 0 && length($r{u}) < $a{u_max}){
-		$r{u} .= "_" x ($a{u_max} - length($r{u}));
-	}elsif($a{u_min} > 0 && length($r{u}) > $a{u_min}){
-		substr($r{u},$a{u_min}) = undef;
+	if($a{u_min} > 0 && length($r{u}) < $a{u_min}){
+		$r{u} .= "_" x ($a{u_min} - length($r{u}));
+	}elsif($a{u_max} > 0 && length($r{u}) > $a{u_max}){
+		substr($r{u},$a{u_max}) = undef;
 	}
 
 	my $f = 0.00;
 	$r{m} = &{(grep{$_->[0] > $s}map{$s = rand($_->[0] = ($f += $_->[0]));$_}grep{$_->[1] =~ /U/io}@{clone(\@m)})[0]->[2]}($r{_});
-	if($a{m_max} > 0 && length($r{m}) < $a{m_max}){
-		$r{m} .= "_" x ($a{m_max} - length($r{m}));
-	}elsif($a{m_min} > 0 && length($r{m}) > $a{m_min}){
-		substr($r{m},$a{m_min}) = undef;
+	if($a{m_min} > 0 && length($r{m}) < $a{m_min}){
+		$r{m} .= "_" x ($a{m_min} - length($r{m}));
+	}elsif($a{m_max} > 0 && length($r{m}) > $a{m_max}){
+		substr($r{m},$a{m_max}) = undef;
 	}
 	$r{m} .= "\@".($#{$a{m_domain}} != -1 ? (@{$a{m_domain}})[int(rand($#{$a{m_domain}} + 1))] : "example.com");
 
 	my $f = 0.00;
 	$r{p} = &{(grep{$_->[0] > $s}map{$s = rand($_->[0] = ($f += $_->[0]));$_}grep{$_->[1] =~ /U/io}@{clone(\@m)})[0]->[2]}($r{_});
-	if($a{p_max} > 0 && length($r{p}) < $a{p_max}){
-		$r{p} .= "_" x ($a{p_max} - length($r{p}));
-	}elsif($a{p_min} > 0 && length($r{p}) > $a{p_min}){
-		substr($r{p},$a{p_min}) = undef;
+	if($a{p_min} > 0 && length($r{p}) < $a{p_min}){
+		$r{p} .= "_" x ($a{p_min} - length($r{p}));
+	}elsif($a{p_max} > 0 && length($r{p}) > $a{p_max}){
+		substr($r{p},$a{p_max}) = undef;
 	}
 
 	return(\%r);
