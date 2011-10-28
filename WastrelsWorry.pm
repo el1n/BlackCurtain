@@ -32,7 +32,6 @@ INIT
 
 sub yeild
 {
-	my $j = shift();
 	my %a = @_;
 
 	my @m = (
