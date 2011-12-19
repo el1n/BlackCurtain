@@ -19,9 +19,10 @@ sub perform:method
 {
 	my $j = shift();
 
-	local %ENV = (%ENV,SESSION =>$j->{CGI}->cookie("IGNORANCE_SESSION"));
-	local %SES;
-	local %COOKIE = (map{$_,$j->{CGI}->{".cookies"}->{$_}->value()}keys(%{$j->{CGI}->{".cookies"}}));
+	$j->{CGI::Session}->load($j->{CGI}->cookie("IGNORANCE_SESSION"));
+	local %ENV = (%ENV,SESSION =>$j->{CGI::Session}->id());
+	local %SES = %{$j->{CGI::Session}->dataref()};
+	local %COOKIE = (IGNORANCE_SESSION =>$ENV{SESSION},map{$_,$j->{CGI}->cookie($_)->value()}($j->{CGI}->cookie()));
 	local %GET;
 	local %POST;
 	my %r = &{$j->{callback}->{(grep{$ENV{PATH_INFO} =~ $_}keys(%{$j->{callback}}))[0]}}();
@@ -32,7 +33,7 @@ sub perform:method
 		$a->{COOKIE} = \%COOKIE;
 		$a->{GET} = \%GET;
 		$a->{POST} = \%POST;
-		print $j->{CGI}->header(qw(-type text/html -charset UTF-8 -cookie),[map{$j->{CGI}->cookie(-name =>$_,-value =>$COOKIE{$_})}keys(%COOKIE)]);
+		print $j->{CGI}->header(qw(-type text/html -charset UTF-8 -cookie),[]);
 		print $j->{Text::Xslate}->render($r{file},$a);
 	}
 	return();
