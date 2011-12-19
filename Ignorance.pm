@@ -21,7 +21,7 @@ sub perform:method
 
 	local %ENV = (%ENV,SESSION =>$j->{CGI}->cookie("IGNORANCE_SESSION"));
 	local %SES;
-	local %COOKIE = (map{$_,$j->{CGI}->{.cookies}->{$_}->value()}keys(%{$j->{CGI}->{.cookies}}));
+	local %COOKIE = (map{$_,$j->{CGI}->{".cookies"}->{$_}->value()}keys(%{$j->{CGI}->{".cookies"}}));
 	local %GET;
 	local %POST;
 	my %r = &{$j->{callback}->{(grep{$ENV{PATH_INFO} =~ $_}keys(%{$j->{callback}}))[0]}}();
