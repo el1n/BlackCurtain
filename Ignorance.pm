@@ -32,7 +32,7 @@ sub perform:method
 		$a->{COOKIE} = \%COOKIE;
 		$a->{GET} = \%GET;
 		$a->{POST} = \%POST;
-		print $j->{CGI}->header(qw(-type text/html));
+		print $j->{CGI}->header(qw(-type text/html -charset UTF-8 -cookie),[map{$j->{CGI}->cookie(-name =>$_,-value =>$COOKIE{$_})}keys(%COOKIE)]);
 		print $j->{Text::Xslate}->render($r{file},$a);
 	}
 	return();
