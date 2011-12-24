@@ -26,17 +26,18 @@ sub perform:method
 	local %POST;
 	local %COOKIE = map{$_->name(),$_->value()}grep{ref($_)}CGI::Cookie->fetch();
 	local %SES = %{($j->{CGI::Session} = CGI::Session->new($j->{args}->{CGI::Session}->[0],$COOKIE{IGNORANCE_SESSION},$j->{args}->{CGI::Session}->[2]))->dataref()};
-	my($order,%r) = &{$j->{callback}->{(grep{$ENV{PATH_INFO} =~ $_}keys(%{$j->{callback}}))[0]}}();
-	if($order eq "none"){
-	}elsif($order eq "jump"){
-	}elsif($order eq "Text::Xslate"){
-		$a->{ENV} = \%ENV;
-		$a->{SES} = \%SES;
-		$a->{COOKIE} = \%COOKIE;
-		$a->{GET} = \%GET;
-		$a->{POST} = \%POST;
+	my($issue,$d,%r) = &{$j->{callback}->{(grep{$ENV{PATH_INFO} =~ $_}keys(%{$j->{callback}}))[0]}}();
+	if($issue eq "none"){
+	}elsif($issue eq "jump"){
+	}elsif($issue eq "Text::Xslate"){
+		$d->{ENV} = \%ENV;
+		$d->{SES} = \%SES;
+		$d->{COOKIE} = \%COOKIE;
+		$d->{GET} = \%GET;
+		$d->{POST} = \%POST;
+		$d->{URL} = sub($){return($ENV{SCRIPT_NAME}.shift())};
 		print $j->{CGI}->header(qw(-type text/html -charset UTF-8 -cookie),[$j->{CGI}->cookie(qw(-name IGNORANCE_SESSION -value),$j->{CGI::Session}->id())]);
-		print $j->{Text::Xslate}->render($r{file},$a);
+		print $j->{Text::Xslate}->render($r{file},$d);
 	}
 	return();
 }
