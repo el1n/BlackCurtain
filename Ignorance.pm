@@ -29,7 +29,7 @@ sub perform:method
 	local %POST;
 	local %COOKIE = map{$_->name(),$_->value()}grep{ref($_)}CGI::Cookie->fetch();
 	local %SES = %{($j->{CGI::Session} = CGI::Session->new($j->{args}->{CGI::Session}->[0],$COOKIE{IGNORANCE_SESSION},$j->{args}->{CGI::Session}->[2]))->dataref()};
-	my($issue,$d,%r) = &{$j->{callback}->{(grep{$ENV{PATH_INFO} =~ $_}keys(%{$j->{callback}}))[0]}}();
+	my($issue,$d,%r) = &{$j->{callback}->{(grep{$ENV{PATH_INFO} =~ $_}keys(%{$j->{callback}}))[0]}}([$ENV{PATH_INFO} =~m/\/+([0-9A-Za-z_]+)/o]);
 	if($issue =~ /^none$/io){
 	}elsif($issue =~ /^jump$/io){
 	}elsif($issue =~ /^(?:Text::)?Xslate$/io){
