@@ -7,6 +7,8 @@ use CGI::Session;
 use CGI::Cookie;
 use Text::Xslate;
 use XML::Simple;
+use JSON;
+use Data::Dumper::HTML;
 
 sub new:method
 {
@@ -14,7 +16,7 @@ sub new:method
 	my $a = shift();
 	my %a = @_;
 
-	return(bless({callback =>$a,args =>\%a,map{$_,$_->new(@{$a{$_}})}qw(CGI Text::Xslate XML::Simple)},$j));
+	return(bless({callback =>$a,args =>\%a,map{$_,$_->new(@{$a{$_}})}qw(CGI Text::Xslate)},$j));
 }
 
 sub perform:method
@@ -40,8 +42,15 @@ sub perform:method
 		print $j->{CGI}->header(qw(-type text/html -charset UTF-8 -cookie),[$j->{CGI}->cookie(qw(-name IGNORANCE_SESSION -value),$j->{CGI::Session}->id())]);
 		print $j->{Text::Xslate}->render($r{file},$d);
 	}elsif($issue =~ /^XML(?:::Simple)?$/io){
-		print $j->{CGI}->header(qw(-type application/xml -charset UTF-8 -cookie),[$j->{CGI}->cookie(qw(-name IGNORANCE_SESSION -value),$j->{CGI::Session}->id())]);
-		print $j->{XML::Simple}->XMLout($d);
+	}elsif($issue =~ /^JSON$/io){
+	}elsif($issue =~ /^Data::Dumper(?:::HTML)?$/io){
+		$d->{ENV} = \%ENV;
+		$d->{SES} = \%SES;
+		$d->{COOKIE} = \%COOKIE;
+		$d->{GET} = \%GET;
+		$d->{POST} = \%POST;
+		print $j->{CGI}->header(qw(-type text/html -charset UTF-8 -cookie),[$j->{CGI}->cookie(qw(-name IGNORANCE_SESSION -value),$j->{CGI::Session}->id())]);
+		print Data::Dumper::HTML::dumper_html($d);
 	}
 	return();
 }
