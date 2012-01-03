@@ -1,7 +1,7 @@
 package BlackCurtain::Ignorance;
 use Carp;
 use vars qw($VERSION);
-use Mouse::Util;
+require Mouse::Util;
 use Encode;
 use CGI;
 use CGI::Session;
@@ -33,7 +33,7 @@ sub perform:method
 	my %POST = $ENV{REQUEST_METHOD} eq "POST" ? map{$_,join(" ",$s->{CGI}->param($_))}$s->{CGI}->param() : undef;
 	my %QUERY = (%GET,%POST);
 
-	my $sub = $s->{callback}->{(grep{$ENV{PATH_INFO} =~ $_}keys(%{$s->{callback}}))[0];
+	my $sub = $s->{callback}->{(grep{$ENV{PATH_INFO} =~ $_}keys(%{$s->{callback}}))[0]};
 	my $pkg = Mouse::Util::get_code_package($sub);
 	local *{$pkg."::ENV"} = \%ENV;
 	local *{$pkg."::COOKIE"} = \%COOKIE;
@@ -49,6 +49,7 @@ sub perform:method
 	}elsif($issue =~ /^file$/io){
 	}elsif($issue =~ /^jump$/io){
 	}elsif($issue =~ /^(?:Text::)?Xslate$/io){
+		$s->{Text::Xslate} ||= Text::Xslate->new(@{$s->{args}->{Text::Xslate}});
 		$d->{ENV} = \%ENV;
 		$d->{SES} = \%SES;
 		$d->{COOKIE} = \%COOKIE;
