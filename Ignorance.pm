@@ -27,9 +27,9 @@ sub perform:method
 	my %a = @_;
 
 	my %ENV = %ENV;
-	my %COOKIE = map{$_->name(),join(" ",$_->value())}grep{ref($_)}CGI::Cookie->fetch();
+	my %COOKIE = CGI::Cookie->raw_fetch();
 	my %SES = %{($s->{CGI::Session} = CGI::Session->new($s->{args}->{CGI::Session}->[0],$COOKIE{IGNORANCE_SID},$s->{args}->{CGI::Session}->[2]))->dataref()};
-	my %GET = map{$_,join(" ",$s->{CGI}->url_param($_))}$s->{CGI}->url_param();
+	my %GET = $ENV{REQUEST_METHOD} eq "GET" ? map{$_,join(" ",$s->{CGI}->param($_))}$s->{CGI}->param() : map{$_,join(" ",$s->{CGI}->url_param($_))}$s->{CGI}->url_param();
 	my %POST = $ENV{REQUEST_METHOD} eq "POST" ? map{$_,join(" ",$s->{CGI}->param($_))}$s->{CGI}->param() : undef;
 	my %QUERY = (%GET,%POST);
 
@@ -45,9 +45,13 @@ sub perform:method
 	my($issue,$d,%r) = $sub->([$ENV{PATH_INFO} =~m/\/+([0-9A-Za-z_]+)/o]);
 	push(@{$r{cookie}},$s->{CGI}->cookie(qw(-name IGNORANCE_SID -value),$s->{CGI::Session}->id()));
 	if($issue =~ /^none$/io){
+		print $s->{CGI}->header(qw(-type text/html -charset UTF-8 -cookie),$r{cookie});
 	}elsif($issue =~ /^data$/io){
+		print $s->{CGI}->header(qw(-type text/html -charset UTF-8 -cookie),$r{cookie});
+		print $d;
 	}elsif($issue =~ /^file$/io){
 	}elsif($issue =~ /^jump$/io){
+		print $s->{CGI}->redirect(qw(-url),$d,qw(-cookie),$r{cookie});
 	}elsif($issue =~ /^(?:Text::)?Xslate$/io){
 		$s->{Text::Xslate} ||= Text::Xslate->new(@{$s->{args}->{Text::Xslate}});
 		$d->{ENV} = \%ENV;
@@ -67,7 +71,7 @@ sub perform:method
 	}elsif($issue =~ /^JSON(?:::Syck)?$/io){
 		print $s->{CGI}->header(qw(-type application/json -charset UTF-8 -cookie),$r{cookie});
 		print JSON::Syck::Dump($d);
-	}elsif($issue =~ /^Data::Dumper(?:)?$/io){
+	}elsif($issue =~ /^(?:Data::)?Dumper$/io){
 		$d->{ENV} = \%ENV;
 		$d->{SES} = \%SES;
 		$d->{COOKIE} = \%COOKIE;
