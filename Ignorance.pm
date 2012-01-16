@@ -51,13 +51,19 @@ sub perform:method
 			my($issue,$d,%r) = $sub->([$ENV{PATH_INFO} =~m/\/+([0-9A-Za-z_]+)/o],\@m,\@args,{pass =>$pass++});
 			push(@{$r{cookie}},$s->{CGI}->cookie(qw(-name IGNORANCE_SID -value),$s->{CGI::Session}->id()));
 			if($issue =~ /^none$/io){
-				print $s->{CGI}->header(qw(-type text/html -charset UTF-8 -cookie),$r{cookie});
+				if(!$s->{CGI}->{".header_printed"}){
+					print $s->{CGI}->header(qw(-type text/html -charset UTF-8 -cookie),$r{cookie});
+				}
 			}elsif($issue =~ /^data$/io){
-				print $s->{CGI}->header(qw(-type text/html -charset UTF-8 -cookie),$r{cookie});
+				if(!$s->{CGI}->{".header_printed"}){
+					print $s->{CGI}->header(qw(-type text/html -charset UTF-8 -cookie),$r{cookie});
+				}
 				print $d;
 			}elsif($issue =~ /^file$/io){
 			}elsif($issue =~ /^jump$/io){
-				print $s->{CGI}->redirect(qw(-url),$d,qw(-cookie),$r{cookie});
+				if(!$s->{CGI}->{".header_printed"}){
+					print $s->{CGI}->redirect(qw(-url),$d,qw(-cookie),$r{cookie});
+				}
 			}elsif($issue =~ /^(?:Text::)?Xslate$/io){
 				$s->{Text::Xslate} ||= Text::Xslate->new(@{$s->{args}->{Text::Xslate}});
 				$d->{ENV} = \%ENV;
@@ -66,16 +72,24 @@ sub perform:method
 				$d->{GET} = \%GET;
 				$d->{POST} = \%POST;
 				$d->{URL} = sub($){return($ENV{SCRIPT_NAME}.shift())};
-				print $s->{CGI}->header(qw(-type text/html -charset UTF-8 -cookie),$r{cookie});
+				if(!$s->{CGI}->{".header_printed"}){
+					print $s->{CGI}->header(qw(-type text/html -charset UTF-8 -cookie),$r{cookie});
+				}
 				print defined($r{file}) ? $s->{Text::Xslate}->render($r{file},$d) : $s->{Text::Xslate}->render_string($r{data},$d);
 			}elsif($issue =~ /^XML(?:::Simple)?$/io){
-				print $s->{CGI}->header(qw(-type application/xml -charset UTF-8 -cookie),$r{cookie});
+				if(!$s->{CGI}->{".header_printed"}){
+					print $s->{CGI}->header(qw(-type application/xml -charset UTF-8 -cookie),$r{cookie});
+				}
 				print XML::Simple::XMLout($d);
 			}elsif($issue =~ /^YAML(?:::Syck)?$/io){
-				print $s->{CGI}->header(qw(-type text/plain -charset UTF-8 -cookie),$r{cookie});
+				if(!$s->{CGI}->{".header_printed"}){
+					print $s->{CGI}->header(qw(-type text/plain -charset UTF-8 -cookie),$r{cookie});
+				}
 				print YAML::Syck::Dump($d);
 			}elsif($issue =~ /^JSON(?:::Syck)?$/io){
-				print $s->{CGI}->header(qw(-type application/json -charset UTF-8 -cookie),$r{cookie});
+				if(!$s->{CGI}->{".header_printed"}){
+					print $s->{CGI}->header(qw(-type application/json -charset UTF-8 -cookie),$r{cookie});
+				}
 				print JSON::Syck::Dump($d);
 			}elsif($issue =~ /^(?:Data::)?Dumper$/io){
 				$d->{ENV} = \%ENV;
@@ -83,7 +97,9 @@ sub perform:method
 				$d->{COOKIE} = \%COOKIE;
 				$d->{GET} = \%GET;
 				$d->{POST} = \%POST;
-				print $s->{CGI}->header(qw(-type text/plain -charset UTF-8 -cookie),$r{cookie});
+				if(!$s->{CGI}->{".header_printed"}){
+					print $s->{CGI}->header(qw(-type text/plain -charset UTF-8 -cookie),$r{cookie});
+				}
 				print Data::Dumper::Dumper($d);
 			}
 		}
