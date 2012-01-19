@@ -8,8 +8,8 @@ use CGI::Session;
 use CGI::Cookie;
 use Text::Xslate;
 use XML::Simple;
-use YAML::Syck qw();
-use JSON::Syck qw();
+use YAML::XS qw();
+use JSON::XS qw();
 use Data::Dumper;
 
 sub new:method
@@ -48,7 +48,7 @@ sub perform:method
 			local *{$pkg."::POST"} = \%POST;
 			local *{$pkg."::QUERY"} = \%QUERY;
 		
-			my($issue,$d,%r) = $sub->([$ENV{PATH_INFO} =~m/\/+([0-9A-Za-z_]+)/o],\@m,\@args,{pass =>$pass++});
+			my($issue,$d,%r) = $sub->([$ENV{PATH_INFO} =~m/\/+([0-9A-Za-z_-]+)/o],\@m,\@args,{pass =>$pass++});
 			push(@{$r{cookie}},$s->{CGI}->cookie(qw(-name IGNORANCE_SID -value),$s->{CGI::Session}->id()));
 			if($issue =~ /^none$/io){
 				if(!$s->{CGI}->{".header_printed"}){
@@ -81,16 +81,16 @@ sub perform:method
 					print $s->{CGI}->header(qw(-type application/xml -charset UTF-8 -cookie),$r{cookie});
 				}
 				print XML::Simple::XMLout($d);
-			}elsif($issue =~ /^YAML(?:::Syck)?$/io){
+			}elsif($issue =~ /^YAML(?:::XS)?$/io){
 				if(!$s->{CGI}->{".header_printed"}){
 					print $s->{CGI}->header(qw(-type text/plain -charset UTF-8 -cookie),$r{cookie});
 				}
-				print YAML::Syck::Dump($d);
-			}elsif($issue =~ /^JSON(?:::Syck)?$/io){
+				print YAML::XS::Dump($d);
+			}elsif($issue =~ /^JSON(?:::XS)?$/io){
 				if(!$s->{CGI}->{".header_printed"}){
 					print $s->{CGI}->header(qw(-type application/json -charset UTF-8 -cookie),$r{cookie});
 				}
-				print JSON::Syck::Dump($d);
+				print JSON::XS::encode_json($d);
 			}elsif($issue =~ /^(?:Data::)?Dumper$/io){
 				$d->{ENV} = \%ENV;
 				$d->{SES} = \%SES;
