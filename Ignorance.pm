@@ -48,7 +48,7 @@ sub perform:method
 			local *{$pkg."::POST"} = \%POST;
 			local *{$pkg."::QUERY"} = \%QUERY;
 		
-			my($issue,$d,%r) = $sub->([$ENV{PATH_INFO} =~m/\/+([0-9A-Za-z_-]+)/o],\@m,\@args,{pass =>$pass++});
+			my($issue,$d,%r) = $sub->([$ENV{PATH_INFO} =~m/\/+([0-9A-Za-z_-]+)/go],\@m,\@args,{pass =>$pass++});
 			push(@{$r{cookie}},$s->{CGI}->cookie(qw(-name IGNORANCE_SID -value),$s->{CGI::Session}->id()));
 			if($issue =~ /^none$/io){
 				if(!$s->{CGI}->{".header_printed"}){
