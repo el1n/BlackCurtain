@@ -71,6 +71,8 @@ sub perform:method
 				$d->{COOKIE} = \%COOKIE;
 				$d->{GET} = \%GET;
 				$d->{POST} = \%POST;
+				$d->{QUERY} = \%QUERY;
+				$d->{MATCH} = \%MATCH;
 				$d->{URL} = sub($){return($ENV{SCRIPT_NAME}.shift())};
 				if(!$s->{CGI}->{".header_printed"}){
 					print $s->{CGI}->header(qw(-type text/html -charset UTF-8 -cookie),$r{cookie});
@@ -97,6 +99,8 @@ sub perform:method
 				$d->{COOKIE} = \%COOKIE;
 				$d->{GET} = \%GET;
 				$d->{POST} = \%POST;
+				$d->{QUERY} = \%QUERY;
+				$d->{MATCH} = \%MATCH;
 				if(!$s->{CGI}->{".header_printed"}){
 					print $s->{CGI}->header(qw(-type text/plain -charset UTF-8 -cookie),$r{cookie});
 				}
