@@ -38,7 +38,7 @@ sub perform:method
 		my($regex,$sub,@args) = @{$callback};
 
 		if($ENV{PATH_INFO} =~ $regex){
-			my @m = ($1,$2,$3,$4,$5,$6,$7,$8,$9);
+			my @m = ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15);
 
 			my $pkg = Mouse::Util::get_code_package($sub);
 			local *{$pkg."::ENV"} = \%ENV;
