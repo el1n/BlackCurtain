@@ -81,7 +81,7 @@ sub spider
 		if(defined($t) ? $t =~ /^HTML$/io : $s->{s}->header("Content-Type") =~ /^text\/html/io){
 			$s->{d} = [map{HTML::Form->parse($_,$s->{s}->{_request}->uri())}($s->{b} =~m/(<form.*?<\/form>)/gios)];
 		}elsif(defined($t) ? $t =~ /^XML$/io : $s->{s}->header("Content-Type") =~ /^application\/xml/io){
-			$s->{d} = XML::Simple::XMLout($s->{b});
+			$s->{d} = XML::Simple::XMLin($s->{b});
 		}else{
 		}
 
