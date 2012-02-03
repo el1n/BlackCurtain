@@ -7,7 +7,7 @@ use CGI;
 use CGI::Session;
 use CGI::Cookie;
 use Text::Xslate;
-use XML::Simple;
+use XML::Simple qw();
 use YAML::XS qw();
 use JSON::XS qw();
 use Data::Dumper;
