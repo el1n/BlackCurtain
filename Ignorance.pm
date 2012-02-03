@@ -36,7 +36,7 @@ sub perform:method
 
 	my $pass = 0;
 	for my $callback (@{$s->{callback}}){
-		my($regex,$sub,$i,@args) = @{$callback};
+		my($regex,$i,$sub,@args) = @{$callback};
 
 		if($ENV{PATH_INFO} =~ $regex){
 			my @m = map{${$_}}(1..($i > 0 ? $i : 9));
