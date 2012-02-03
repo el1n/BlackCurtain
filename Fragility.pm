@@ -11,14 +11,17 @@ use HTTP::Request;
 use HTTP::Response;
 use HTTP::Cookies;
 use HTML::Form;
+use XML::Simple qw();
+use YAML::XS qw();
+use JSON::XS qw();
 
 AUTOLOAD
 {
-	my $j = shift();
-	my @a = @_;
+	my $s = shift();
+	my @g = @_;
 
 	if(eval(qq(require $AUTOLOAD))){
-		return($AUTOLOAD->new(@a));
+		return($AUTOLOAD->new(@g));
 	}else{
 		Carp::croak($@);
 	}
@@ -26,20 +29,21 @@ AUTOLOAD
 
 sub new
 {
-	my $j = shift();
-	my %a = @_;
+	my $s = shift();
+	my %g = @_;
 
-	$j = bless({},$j);
-	$j->clean();
+	$s = bless({},$s);
+	$s->clean();
 
-	return($j);
+	return($s);
 }
 
 sub clean
 {
-	my $j = shift();
+	my $s = shift();
+	my %g = @_;
 
-	$j->{a} = LWP::UserAgent->new(
+	$s->{a} = LWP::UserAgent->new(
 		#agent =>
 		#from =>
 		#conn_cache =>
@@ -57,7 +61,8 @@ sub clean
 		#protocols_allowed =>
 		#protocols_forbidden =>
 		requests_redirectable =>[qw(GET HEAD POST)],
-		timeout =>60,
+		timeout =>30,
+		%g,
 	);
 
 	return();
@@ -65,16 +70,22 @@ sub clean
 
 sub spider
 {
-	my $j = shift();
+	my $s = shift();
 	my $q = shift();
-	my @a = @_;
+	my $t = shift();
+	my @g = @_;
 
-	if(($j->{s} = $j->{a}->request(blessed($q) ? $q : HTTP::Request->new(ref($q) eq "HASH" ? %{$q} : (GET =>$q))))->is_success()){
-		$j->{h} = $j->{s}->{_headers}->as_string();
-		$j->{b} = $j->{s}->decoded_content(default_charset =>"UTF-8");
-		$j->{f} = [map{HTML::Form->parse($_,$j->{s}->{_request}->uri())}($j->{b} =~m/(<form.*?<\/form>)/gios)];
+	if(($s->{s} = $s->{a}->request(blessed($q) ? $q : HTTP::Request->new(ref($q) eq "HASH" ? %{$q} : (GET =>$q))))->is_success()){
+		$s->{h} = $s->{s}->{_headers}->as_string();
+		$s->{b} = $s->{s}->decoded_content(default_charset =>"UTF-8");
+		if(defined($t) ? $t =~ /^HTML$/io : $s->{s}->header("Content-Type") =~ /^text\/html/io){
+			$s->{d} = [map{HTML::Form->parse($_,$s->{s}->{_request}->uri())}($s->{b} =~m/(<form.*?<\/form>)/gios)];
+		}elsif(defined($t) ? $t =~ /^XML$/io : $s->{s}->header("Content-Type") =~ /^application\/xml/io){
+			$s->{d} = XML::Simple::XMLout($s->{b});
+		}else{
+		}
 
-		return($j->{s}->code(),$j->{b},$j->{f},$j->seek(@a));
+		return($s->{s}->code(),$s->{b},$s->{d},$s->seek(@g));
 	}else{
 		return(0);
 	}
@@ -82,23 +93,23 @@ sub spider
 
 sub seek
 {
-	my $j = shift();
-	my @a = map{ref($_) eq "ARRAY" ? @{$_} : $_}@_;
+	my $s = shift();
+	my @g = map{ref($_) eq "ARRAY" ? @{$_} : $_}@_;
 
 	my @r = map{
 		if(defined($_->{regex}) || ref($_) ne "HASH"){
-			$j->{b} =~ /$_->{regex}/i;
+			$s->{b} =~ /$_->{regex}/i;
 			defined($1) ? $1 : 1;
 		}elsif(defined($_->{word})){
-			$j->{b} =~ /\Q$_->{word}\E/ig;
+			$s->{b} =~ /\Q$_->{word}\E/ig;
 		}elsif(defined($_->{form})){
 			my $a = $_;
-			(grep{(!defined($a->{form})) || ($_->{attr}->{id} =~ /$a->{form}/i || $_->{attr}->{name} =~ /$a->{form}/i)}@{$j->{f}})[0];
+			(grep{(!defined($a->{form})) || ($_->{attr}->{id} =~ /$a->{form}/i || $_->{attr}->{name} =~ /$a->{form}/i)}@{$s->{f}})[0];
 		}elsif(defined($_->{code})){
-			$_->{code} == $j->{s}->code();
+			$_->{code} == $s->{s}->code();
 		}else{
 		}
-	}@a;
+	}@g;
 
 	return(@r);
 }
