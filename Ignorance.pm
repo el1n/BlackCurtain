@@ -32,13 +32,14 @@ sub perform:method
 	my %GET = $ENV{REQUEST_METHOD} eq "GET" ? map{$_,join(" ",$s->{CGI}->param($_))}$s->{CGI}->param() : map{$_,join(" ",$s->{CGI}->url_param($_))}$s->{CGI}->url_param();
 	my %POST = $ENV{REQUEST_METHOD} eq "POST" ? map{$_,join(" ",$s->{CGI}->param($_))}$s->{CGI}->param() : undef;
 	my %QUERY = (%GET,%POST);
+	my %BORROW;
 
 	my $pass = 0;
 	for my $callback (@{$s->{callback}}){
-		my($regex,$sub,@args) = @{$callback};
+		my($regex,$sub,$i,@args) = @{$callback};
 
 		if($ENV{PATH_INFO} =~ $regex){
-			my @m = ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15);
+			my @m = map{${$_}}(1..($i > 0 ? $i : 9));
 
 			my $pkg = Mouse::Util::get_code_package($sub);
 			local *{$pkg."::ENV"} = \%ENV;
@@ -47,8 +48,9 @@ sub perform:method
 			local *{$pkg."::GET"} = \%GET;
 			local *{$pkg."::POST"} = \%POST;
 			local *{$pkg."::QUERY"} = \%QUERY;
+			local *{$pkg."::BORROW"} = \%BORROW;
 		
-			my($issue,$d,%r) = $sub->([$ENV{PATH_INFO} =~m/\/+([0-9A-Za-z_-]+)/go],\@m,\@args,{pass =>$pass++});
+			my($issue,$d,%r) = $sub->([$ENV{PATH_INFO} =~m/\/+([0-9A-Za-z_-]+)/go],\@m,{pass =>$pass++});
 			push(@{$r{cookie}},$s->{CGI}->cookie(qw(-name IGNORANCE_SID -value),$s->{CGI::Session}->id()));
 			if($issue =~ /^none$/io){
 				if(!$s->{CGI}->{".header_printed"}){
@@ -72,6 +74,7 @@ sub perform:method
 				$d->{GET} = \%GET;
 				$d->{POST} = \%POST;
 				$d->{QUERY} = \%QUERY;
+				$d->{BORROW} = \%BORROW;
 				$d->{MATCH} = \@m;
 				$d->{URL} = sub($){return($ENV{SCRIPT_NAME}.shift())};
 				if(!$s->{CGI}->{".header_printed"}){
@@ -100,6 +103,7 @@ sub perform:method
 				$d->{GET} = \%GET;
 				$d->{POST} = \%POST;
 				$d->{QUERY} = \%QUERY;
+				$d->{BORROW} = \%BORROW;
 				$d->{MATCH} = \@m;
 				if(!$s->{CGI}->{".header_printed"}){
 					print $s->{CGI}->header(qw(-type text/plain -charset UTF-8 -cookie),$r{cookie});
@@ -109,7 +113,7 @@ sub perform:method
 		}
 	}
 	$s->{CGI::Session}->{_DATA} = \%SES;
-	$s->{CGI::Session}->save_param();
+	$s->{CGI::Session}->_set_status($s->{CGI::Session}->STATUS_MODIFIED);
 	$s->{CGI::Session}->close();
 
 	return();
