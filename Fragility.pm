@@ -87,7 +87,7 @@ sub spider
 
 		return($s->{s}->code(),$s->{b},$s->{d},$s->seek(@g));
 	}else{
-		return(0);
+		return($s->{s}->code());
 	}
 }
 
