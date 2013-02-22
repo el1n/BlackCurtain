@@ -97,14 +97,14 @@ sub seek
 	my @g = map{ref($_) eq "ARRAY" ? @{$_} : $_}@_;
 
 	my @r = map{
-		if(defined($_->{regex}) || ref($_) ne "HASH"){
-			$s->{b} =~ /$_->{regex}/i;
+		if(defined($_->{regx}) || ref($_) ne "HASH"){
+			$s->{b} =~ /$_->{regx}/i;
 			defined($1) ? $1 : 1;
 		}elsif(defined($_->{word})){
 			$s->{b} =~ /\Q$_->{word}\E/ig;
 		}elsif(defined($_->{form})){
 			my $a = $_;
-			(grep{(!defined($a->{form})) || ($_->{attr}->{id} =~ /$a->{form}/i || $_->{attr}->{name} =~ /$a->{form}/i)}@{$s->{f}})[0];
+			(grep{(!defined($a->{form})) || ($_->{attr}->{id} =~ /$a->{form}/i || $_->{attr}->{name} =~ /$a->{form}/i)}@{$s->{d}})[0];
 		}elsif(defined($_->{code})){
 			$_->{code} == $s->{s}->code();
 		}else{
