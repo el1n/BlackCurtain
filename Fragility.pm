@@ -60,7 +60,7 @@ sub clean
 		timeout =>30,
 		%a,
 	);
-	$s->{a}->add_handler(response_done =>sub(){shift()->{def_headers}->header(Referer =>$s->{_request}->{_uri})});
+	$s->{a}->add_handler(response_done =>sub(){pop();pop()->{def_headers}->header(Referer =>pop()->request()->uri())});
 
 	return($s);
 }
@@ -70,19 +70,19 @@ sub spider
 	my($s,$q,$y,@a) = @_;
 
 	if(($s->{s} = $s->{a}->request(blessed($q) ? $q : HTTP::Request->new(ref($q) eq "HASH" ? %{$q} : (GET =>$q))))->is_success()){
-		$s->{h} = $s->{s}->{_headers}->as_string();
+		$s->{h} = $s->{s}->header()->as_string();
 		$s->{b} = $s->{s}->decoded_content(default_charset =>"UTF-8");
 		given($y // $s->{s}->header("Content-Type")){
-			when(/^(?:text\/)?html$/io){
+			when(/^(?:text\/)?html(?:;.+?)?$/io){
 				$s->{d} = HTML::TreeBuilder->new_from_content($s->{b});
 			}
-			when(/^(?:application\/)?xml$/io){
+			when(/^(?:application\/)?xml(?:;.+?)?$/io){
 				$s->{d} = XML::Simple::XMLin($s->{b});
 			}
-			when(/^(?:application\/)?json$/io){
+			when(/^(?:application\/)?json(?:;.+?)?$/io){
 				$s->{d} = JSON::XS::decode_json($s->{b});
 			}
-			when(/^(?:application\/(?:x-))?yaml$/io){
+			when(/^(?:application\/(?:x-))?yaml(?:;.+?)?$/io){
 				$s->{d} = YAML::XS::Load($s->{b});
 			}
 		}
@@ -98,7 +98,8 @@ sub seek
 	my($s,@a) = @_;
 	my @r;
 
-	while(my($op,$var) = (shift(@a),shift(@a))){
+	while($#a != -1){
+		my($op,$var) = (shift(@a),shift(@a));
 		given($op){
 			when("regx"){
 				push(@r,$s->{b} =~ /$var/i ? defined($1) ? $1 : 1 : 0);
@@ -108,11 +109,11 @@ sub seek
 			}
 			when("form"){
 				$s->{form} //= [HTML::Form->parse($s->{b},$s->{s}->request()->uri())];
-				push(@r,(grep{grep(/\Q$var\E/i,@{$_}{qw(id class name)})}@{$s->{form}})[0]);
+				push(@r,(grep{grep(/\Q$var\E/i,@{$_->{attr}}{qw(id class name)})}@{$s->{form}})[0]);
 			}
 			when(ref() eq "ARRAY" && $_->[0] eq "form"){
 				$s->{form} //= [HTML::Form->parse($s->{b},$s->{s}->request()->uri())];
-				push(@r,[grep{grep(/\Q$var\E/i,@{$_}{qw(id class name)})}@{$s->{form}}]);
+				push(@r,[grep{grep(/\Q$var\E/i,@{$_->{attr}}{qw(id class name)})}@{$s->{form}}]);
 			}
 		}
 	}
