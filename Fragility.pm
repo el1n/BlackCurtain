@@ -1,4 +1,5 @@
 package BlackCurtain::Fragility;
+use 5.10.0;
 use Carp;
 use base qw(Clone);
 use vars qw($AUTOLOAD);
@@ -10,6 +11,7 @@ use HTTP::Headers;
 use HTTP::Request;
 use HTTP::Response;
 use HTTP::Cookies;
+use HTML::TreeBuilder;
 use HTML::Form;
 use XML::Simple qw();
 use YAML::XS qw();
@@ -17,11 +19,10 @@ use JSON::XS qw();
 
 AUTOLOAD
 {
-	my $s = shift();
-	my @g = @_;
+	my($s,@a) = @_;
 
 	if(eval(qq(require $AUTOLOAD))){
-		return($AUTOLOAD->new(@g));
+		return($AUTOLOAD->new(@a));
 	}else{
 		Carp::croak($@);
 	}
@@ -29,19 +30,14 @@ AUTOLOAD
 
 sub new
 {
-	my $s = shift();
-	my %g = @_;
+	my($s,%a) = @_;
 
-	$s = bless({},$s);
-	$s->clean();
-
-	return($s);
+	return(($s = bless({},$s))->clean(%a));
 }
 
 sub clean
 {
-	my $s = shift();
-	my %g = @_;
+	my($s,%a) = @_;
 
 	$s->{a} = LWP::UserAgent->new(
 		#agent =>
@@ -62,30 +58,36 @@ sub clean
 		#protocols_forbidden =>
 		requests_redirectable =>[qw(GET HEAD POST)],
 		timeout =>30,
-		%g,
+		%a,
 	);
+	$s->{a}->add_handler(response_done =>sub(){shift()->{def_headers}->header(Referer =>$s->{_request}->{_uri})});
 
-	return();
+	return($s);
 }
 
 sub spider
 {
-	my $s = shift();
-	my $q = shift();
-	my $t = shift();
-	my @g = @_;
+	my($s,$q,$y,@a) = @_;
 
 	if(($s->{s} = $s->{a}->request(blessed($q) ? $q : HTTP::Request->new(ref($q) eq "HASH" ? %{$q} : (GET =>$q))))->is_success()){
 		$s->{h} = $s->{s}->{_headers}->as_string();
 		$s->{b} = $s->{s}->decoded_content(default_charset =>"UTF-8");
-		if(defined($t) ? $t =~ /^HTML$/io : $s->{s}->header("Content-Type") =~ /^text\/html/io){
-			$s->{d} = [map{HTML::Form->parse($_,$s->{s}->{_request}->uri())}($s->{b} =~m/(<form.*?<\/form>)/gios)];
-		}elsif(defined($t) ? $t =~ /^XML$/io : $s->{s}->header("Content-Type") =~ /^application\/xml/io){
-			$s->{d} = XML::Simple::XMLin($s->{b});
-		}else{
+		given($y // $s->{s}->header("Content-Type")){
+			when(/^(?:text\/)?html$/io){
+				$s->{d} = HTML::TreeBuilder->new_from_content($s->{b});
+			}
+			when(/^(?:application\/)?xml$/io){
+				$s->{d} = XML::Simple::XMLin($s->{b});
+			}
+			when(/^(?:application\/)?json$/io){
+				$s->{d} = JSON::XS::decode_json($s->{b});
+			}
+			when(/^(?:application\/(?:x-))?yaml$/io){
+				$s->{d} = YAML::XS::Load($s->{b});
+			}
 		}
 
-		return($s->{s}->code(),$s->{b},$s->{d},$s->seek(@g));
+		return($s->{s}->code(),$s->{b},$s->{d},$s->seek(@a));
 	}else{
 		return($s->{s}->code());
 	}
@@ -93,24 +95,27 @@ sub spider
 
 sub seek
 {
-	my $s = shift();
-	my @g = map{ref($_) eq "ARRAY" ? @{$_} : $_}@_;
+	my($s,@a) = @_;
+	my @r;
 
-	my @r = map{
-		if(defined($_->{regx}) || ref($_) ne "HASH"){
-			$s->{b} =~ /$_->{regx}/i;
-			defined($1) ? $1 : 1;
-		}elsif(defined($_->{word})){
-			$s->{b} =~ /\Q$_->{word}\E/ig;
-		}elsif(defined($_->{form})){
-			my $a = $_;
-			(grep{(!defined($a->{form})) || ($_->{attr}->{id} =~ /$a->{form}/i || $_->{attr}->{name} =~ /$a->{form}/i)}@{$s->{d}})[0];
-		}elsif(defined($_->{code})){
-			$_->{code} == $s->{s}->code();
-		}else{
+	while(my($op,$var) = (shift(@a),shift(@a))){
+		given($op){
+			when("regx"){
+				push(@r,$s->{b} =~ /$var/i ? defined($1) ? $1 : 1 : 0);
+			}
+			when(ref() eq "ARRAY" && $_->[0] eq "regx"){
+				push(@r,[$s->{b} =~ /$var/gi]);
+			}
+			when("form"){
+				$s->{form} //= [HTML::Form->parse($s->{b},$s->{s}->request()->uri())];
+				push(@r,(grep{grep(/\Q$var\E/i,@{$_}{qw(id class name)})}@{$s->{form}})[0]);
+			}
+			when(ref() eq "ARRAY" && $_->[0] eq "form"){
+				$s->{form} //= [HTML::Form->parse($s->{b},$s->{s}->request()->uri())];
+				push(@r,[grep{grep(/\Q$var\E/i,@{$_}{qw(id class name)})}@{$s->{form}}]);
+			}
 		}
-	}@g;
-
+	}
 	return(@r);
 }
 
